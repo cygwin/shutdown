@@ -1,0 +1,3 @@
+sdesc: "Shutdown, reboot, hibernate or suspend the machine"
+category: Admin
+requires: cygwin
