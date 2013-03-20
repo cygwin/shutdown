@@ -24,8 +24,7 @@ VPATH = $(SRCDIR)
 BINDIR=/usr/bin
 DESTDIR=
 
-CFLAGS=-g
-LDFLAGS=-s
+CFLAGS?=-g
 
 EXEEXT=.exe
 

@@ -36,7 +36,7 @@
 #define SUSPEND		 64
 #define ABORT		128
 
-static char *SCCSid = "@(#)shutdown V1.8.1, Corinna Vinschen, " __DATE__ "\n";
+static char *SCCSid = "@(#)shutdown V1.8.2, Corinna Vinschen, " __DATE__ "\n";
 
 char *myname;
 
