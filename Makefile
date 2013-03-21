@@ -36,21 +36,26 @@ all:	shutdown$(EXEEXT)
 shutdown$(EXEEXT): $(OBJ)
 	$(CC) -o $@ $(LDFLAGS) $(OBJ)
 
-install: shutdown$(EXEEXT)
-	mkdir -p $(DESTDIR)$(BINDIR)
-	cp shutdown$(EXEEXT) $(DESTDIR)$(BINDIR)
-	cd $(DESTDIR)$(BINDIR) && \
-	ln -fs shutdown$(EXEEXT) halt && \
-	ln -fs shutdown$(EXEEXT) poweroff && \
-	ln -fs shutdown$(EXEEXT) reboot && \
-	ln -fs shutdown$(EXEEXT) hibernate && \
-	ln -fs shutdown$(EXEEXT) suspend
-	cp shutdown.8 reboot.8 $(MANDIR)
-	cd $(MANDIR) && \
-	ln -fs reboot.8 halt.8 && \
-	ln -fs reboot.8 poweroff.8 && \
-	ln -fs reboot.8 hibernate.8 && \
-	ln -fs reboot.8 suspend.8
+install-exe: shutdown$(EXEEXT)
+	mkdir -p $(DESTDIR)$(BINDIR) && \
+	cp shutdown$(EXEEXT) $(DESTDIR)$(BINDIR) && \
+	( cd $(DESTDIR)$(BINDIR) && \
+	  ln -fs shutdown$(EXEEXT) halt && \
+	  ln -fs shutdown$(EXEEXT) poweroff && \
+	  ln -fs shutdown$(EXEEXT) reboot && \
+	  ln -fs shutdown$(EXEEXT) hibernate && \
+	  ln -fs shutdown$(EXEEXT) suspend )
+
+install-man:
+	mkdir -p $(DESTDIR)$(MANDIR) && \
+	cp $(SRCDIR)/shutdown.8 $(SRCDIR)/reboot.8 $(DESTDIR)$(MANDIR) && \
+	( cd $(DESTDIR)$(MANDIR) && \
+	  ln -fs reboot.8 halt.8 && \
+	  ln -fs reboot.8 poweroff.8 && \
+	  ln -fs reboot.8 hibernate.8 && \
+	  ln -fs reboot.8 suspend.8 )
+
+install: install-exe install-man
 
 clean:
 	rm -f shutdown$(EXEEXT) shutdown.o *.stackdump
