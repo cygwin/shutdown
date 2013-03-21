@@ -1,0 +1,66 @@
+.\"             -*-Nroff-*-
+.\"
+.TH SHUTDOWN "8" "March 2013" "" ""
+.SH NAME
+shutdown \- bring the system down.
+.SH SYNOPSIS
+.B shutdown
+[\fIoptions\fR]
+TIME
+.SH DESCRIPTION
+.B shutdown
+brings the system down in a safe way.
+.PP
+.I TIME
+may have different formats, the most common is simply the word
+.RI ' now '
+which will bring the system down immediately.  Other valid formats are
+.IR +m ,
+where
+.I m
+is the number of minutes to wait until shutting down and
+.I hh:mm
+which specifies the time on the 24hr clock. A single number will be treated as the number of seconds before shutting down.
+.SH OPTIONS
+.TP
+\fB\-f\fR, \fB\-\-force\fR
+Forces the execution. This can cause applications to lose data.
+.TP
+\fB\-s\fR, \fB\-\-shutdown\fR
+The system will shutdown and power off. This is the default action. The system must support the power-off feature, but most systems do.
+.TP
+\fB\-r\fR, \fB\-\-reboot\fR
+The system will shutdown and then restart.
+.TP
+\fB\-h\fR, \fB\-\-hibernate\fR
+The system will suspend to disk. The system must support the hibernate feature.
+.TP
+\fB\-p\fR, \fB\-\-suspend\fR
+The system will suspend to RAM. This is also known as sleep or standby. The system must support the suspend feature.
+.TP
+\fB\-a\fR, \fB\-\-abort\fR
+Aborts the execution of formerly started shutdown or reboot.
+.TP
+\fB\-x\fR, \fB\-\-exitex\fR
+Use ExitWindowsEx rather than InitateSystemShutdown.
+.TP
+\fB\-\-help\fR
+Display a help text and exit.
+.TP
+\fB\-\-version\fR
+Display version information and exit.
+.SH AUTHORS
+.B shutdown
+was written by Corinna Vinschen.
+.SH COPYRIGHT
+Copyright 2005-2013 Corinna Vinschen. License GPLv3+: GNU GPL version 3 or later
+.UR
+<http://gnu.org/licenses/gpl.html>.
+.PP
+This is free software; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH "SEE ALSO"
+.BR reboot (8)
+.SH "REPORTING BUGS"
+Please send bug reports to
+.UR cygwin@cygwin.com
+.UE

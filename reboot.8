@@ -1,0 +1,54 @@
+.\"             -*-Nroff-*-
+.\"
+.TH REBOOT "8" "March 2013" "" ""
+.SH NAME
+reboot, halt, poweroff, hibernate, suspend \- reboot, stop or suspend the system.
+.SH SYNOPSIS
+.B reboot
+[\fIoptions\fR]
+.PP
+.B halt
+[\fIoptions\fR]
+.PP
+.B poweroff
+[\fIoptions\fR]
+.PP
+.B hibernate
+[\fIoptions\fR]
+.PP
+.B suspend
+[\fIoptions\fR]
+.SH DESCRIPTION
+These programs allow to
+.BR reboot ", " halt ", " poweroff ", " hibernate " or " suspend
+the system.
+.PP
+They are aliases for \fBshutdown --reboot now\fR, \fBshutdown now\fR, \fBshutdown --hibernate now\fR and \fBshutdown --suspend now\fR.
+.SH OPTIONS
+.TP
+\fB\-f\fR, \fB\-\-force\fR
+Forces the execution. This can cause applications to lose data.
+.TP
+\fB\-x\fR, \fB\-\-exitex\fR
+Use ExitWindowsEx rather than InitateSystemShutdown.
+.TP
+\fB\-\-help\fR
+Display a help text and exit.
+.TP
+\fB\-\-version\fR
+Display version information and exit.
+.SH AUTHORS
+.B reboot
+was written by Corinna Vinschen.
+.SH COPYRIGHT
+Copyright 2005-2013 Corinna Vinschen. License GPLv3+: GNU GPL version 3 or later
+.UR
+<http://gnu.org/licenses/gpl.html>.
+.PP
+This is free software; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH "SEE ALSO"
+.BR shutdown (8)
+.SH "REPORTING BUGS"
+Please send bug reports to
+.UR cygwin@cygwin.com
+.UE

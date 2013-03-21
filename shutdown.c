@@ -36,10 +36,14 @@
 #define SUSPEND		 64
 #define ABORT		128
 
-static char *SCCSid = "@(#)shutdown V1.8.2, Corinna Vinschen, " __DATE__ "\n";
+static char *SCCSid = "@(#)shutdown V1.9, Corinna Vinschen, " __DATE__ "\n";
 
 char *myname;
-
+long secs = -1;
+int action = EWX_POWEROFF;
+int force = 0;
+BOOL force_exitex = FALSE;
+char buf[4096];
 char errbuf[4096];
 
 char *
@@ -54,7 +58,7 @@ error (DWORD err)
 }
 
 int
-usage (void)
+usage_shutdown (void)
 {
   printf ("Usage: %s [OPTION]... time\n", myname);
   printf ("Bring the system down.\n\n");
@@ -69,8 +73,45 @@ usage (void)
   printf ("      --version    Output version information and exit.\n");
   printf ("\n`time' is either the time in seconds or `+' and the time in minutes or a\n");
   printf ("timestamp in the format `hh:mm' or the word \"now\" for an immediate action.\n");
-  printf ("\nTo reboot is the default if started as `reboot', to hibernate if started\n");
-  printf ("as `hibernate', to suspend if started as `suspend', to shutdown otherwise.\n");
+  return 0;
+}
+
+int
+usage_reboot (void)
+{
+  printf ("Usage: %s [OPTION]...\n", myname);
+
+  switch (action)
+  {
+    case EWX_POWEROFF:
+      printf ("Bring the system down.\n\n");
+      break;
+    case EWX_REBOOT:
+      printf ("Reboot the system.\n\n");
+      break;
+    case HIBERNATE:
+      printf ("Suspend the system to disk.\n\n");
+      break;
+    case SUSPEND:
+      printf ("Suspend the system to RAM.\n\n");
+      break;
+  }
+
+  printf ("  -f, --force      Forces the execution.\n");
+  printf ("  -x, --exitex     Use ExitWindowsEx rather than InitateSystemShutdown.\n");
+  printf ("      --help       Display this help and exit.\n");
+  printf ("      --version    Output version information and exit.\n");
+  return 0;
+}
+
+int
+version (void)
+{
+  printf ("%s\n", SCCSid + 4);
+  printf ("Copyright (C) 2005-2013 Corinna Vinschen\n");
+  printf ("This is free software; see the source for copying conditions.\n");
+  printf ("There is NO warranty; not even for MERCHANTABILITY or FITNESS\n");
+  printf ("FOR A PARTICULAR PURPOSE.\n");
   return 0;
 }
 
@@ -118,44 +159,28 @@ setprivs (void)
   return 0;
 }
 
-struct option longopts[] = {
-  {"abort", no_argument, NULL, 'a'},
-  {"exitex", no_argument, NULL, 'x'},
-  {"force", no_argument, NULL, 'f'},
-  {"shutdown", no_argument, NULL, 's'},
-  {"reboot", no_argument, NULL, 'r'},
-  {"hibernate", no_argument, NULL, 'h'},
-  {"suspend", no_argument, NULL, 'p'},
-  {"help", no_argument, NULL, 'H'},
-  {"version", no_argument, NULL, 'v'},
-  {0, no_argument, NULL, 0}
-};
-
-char opts[] = "axfsrhp";
+/* parse command line for the shutdown command */
 
 int
-main (int argc, char **argv)
+parse_cmdline_shutdown(int argc, char **argv)
 {
-  int c;
-  long secs = -1;
-  int action = EWX_POWEROFF;
-  int force = 0;
-  char buf[4096], *arg, *endptr;
-  DWORD err;
-  BOOL force_exitex = FALSE;
+  struct option longopts[] = {
+    {"abort", no_argument, NULL, 'a'},
+    {"exitex", no_argument, NULL, 'x'},
+    {"force", no_argument, NULL, 'f'},
+    {"shutdown", no_argument, NULL, 's'},
+    {"reboot", no_argument, NULL, 'r'},
+    {"hibernate", no_argument, NULL, 'h'},
+    {"suspend", no_argument, NULL, 'p'},
+    {"help", no_argument, NULL, 'H'},
+    {"version", no_argument, NULL, 'v'},
+    {0, no_argument, NULL, 0}
+  };
 
-  if ((myname = strrchr (argv[0], '/')) || (myname = strrchr (argv[0], '\\')))
-    ++myname;
-  else
-    myname = argv[0];
-  if (strrchr (myname, '.'))
-    *strrchr (myname, '.') = '\0';
-  if (!strcasecmp (myname, "reboot"))
-    action = EWX_REBOOT;
-  else if (!strcasecmp (myname, "hibernate"))
-    action = HIBERNATE;
-  else if (!strcasecmp (myname, "suspend"))
-    action = SUSPEND;
+  char opts[] = "axfsrhp";
+  int c;
+  char *arg, *endptr;
+
   while ((c = getopt_long (argc, argv, opts, longopts, NULL)) != EOF)
     switch (c)
       {
@@ -181,18 +206,14 @@ main (int argc, char **argv)
 	force_exitex = TRUE;
 	break;
       case 'v':
-	printf ("%s\n", SCCSid + 4);
-	printf ("Copyright (C) 2005 Corinna Vinschen\n");
-	printf ("This is free software; see the source for copying conditions.\n");
-	printf ("There is NO warranty; not even for MERCHANTABILITY or FITNESS\n");
-	printf ("FOR A PARTICULAR PURPOSE.\n");
-        return 0;
+	return version ();
       case 'H':
-	return usage ();
+	return usage_shutdown ();
       default:
         fprintf (stderr, "Try `%s --help' for more information.\n", myname);
 	return 1;
       }
+
   if (action != ABORT)
     {
       if (optind >= argc)
@@ -262,12 +283,108 @@ main (int argc, char **argv)
 	  return 2;
 	}
     }
+
+  return -1;
+}
+
+int
+parse_cmdline_reboot(int argc, char **argv)
+{
+  struct option longopts[] = {
+    {"exitex", no_argument, NULL, 'x'},
+    {"force", no_argument, NULL, 'f'},
+    {"help", no_argument, NULL, 'H'},
+    {"version", no_argument, NULL, 'v'},
+    {0, no_argument, NULL, 0}
+  };
+
+  char opts[] = "xf";
+  int c;
+
+  while ((c = getopt_long (argc, argv, opts, longopts, NULL)) != EOF)
+    switch (c)
+      {
+      case 'f':
+	force = EWX_FORCE;
+	break;
+      case 'x':
+	force_exitex = TRUE;
+	break;
+      case 'v':
+	return version ();
+      case 'H':
+	return usage_reboot ();
+      default:
+        fprintf (stderr, "Try `%s --help' for more information.\n", myname);
+	return 1;
+      }
+
+  if (optind != argc)
+    {
+    fprintf (stderr, "%s: too many arguments\n", myname);
+    fprintf (stderr, "Try `%s --help' for more information.\n", myname);
+    return 1;
+    }
+
+  strcpy (buf, "NOW");
+  return -1;
+}
+
+int
+main (int argc, char **argv)
+{
+  DWORD err;
+  buf[0] = 0;
+
+  if ((myname = strrchr (argv[0], '/')) || (myname = strrchr (argv[0], '\\')))
+    ++myname;
+  else
+    myname = argv[0];
+  if (strrchr (myname, '.'))
+    *strrchr (myname, '.') = '\0';
+  if (!strcasecmp (myname, "reboot"))
+  {
+    action = EWX_REBOOT;
+    secs = 0;
+  }
+  else if (!strcasecmp (myname, "halt") || !strcasecmp (myname, "poweroff"))
+  {
+    action = EWX_POWEROFF;
+    secs = 0;
+  }
+  else if (!strcasecmp (myname, "hibernate"))
+  {
+    action = HIBERNATE;
+    secs = 0;
+  }
+  else if (!strcasecmp (myname, "suspend"))
+  {
+    action = SUSPEND;
+    secs = 0;
+  }
+
+  /* Parse the entire command line */
+  if (secs < 0)
+  {
+    /* secs not set to 0, so command must invoked as "shutdown" */
+    int ret = parse_cmdline_shutdown(argc, argv);
+    if (ret >= 0)
+      return ret;
+  }
+  else
+  {
+    int ret = parse_cmdline_reboot(argc, argv);
+    if (ret >= 0)
+      return ret;
+  }
+
   if (setprivs ())
     return 3;
 
   if (action != ABORT)
     printf ("WARNING!!! System is going down %s\n", buf);
 
+  /* Execute the action */
   if (action == EWX_POWEROFF || action == EWX_REBOOT)
     {
       if (force_exitex)
@@ -300,6 +417,7 @@ main (int argc, char **argv)
 	return 0;
     }
   
+  /* Something went wrong */
   err = GetLastError ();
   fprintf (stderr, "%s: Couldn't ", myname);
   switch (action)

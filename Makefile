@@ -22,6 +22,7 @@ SRCDIR ?= .
 VPATH = $(SRCDIR)
 
 BINDIR=/usr/bin
+MANDIR=/usr/share/man/man8
 DESTDIR=
 
 CFLAGS?=-g
@@ -39,9 +40,17 @@ install: shutdown$(EXEEXT)
 	mkdir -p $(DESTDIR)$(BINDIR)
 	cp shutdown$(EXEEXT) $(DESTDIR)$(BINDIR)
 	cd $(DESTDIR)$(BINDIR) && \
+	ln -fs shutdown$(EXEEXT) halt && \
+	ln -fs shutdown$(EXEEXT) poweroff && \
 	ln -fs shutdown$(EXEEXT) reboot && \
 	ln -fs shutdown$(EXEEXT) hibernate && \
 	ln -fs shutdown$(EXEEXT) suspend
+	cp shutdown.8 reboot.8 $(MANDIR)
+	cd $(MANDIR) && \
+	ln -fs reboot.8 halt.8 && \
+	ln -fs reboot.8 poweroff.8 && \
+	ln -fs reboot.8 hibernate.8 && \
+	ln -fs reboot.8 suspend.8
 
 clean:
 	rm -f shutdown$(EXEEXT) shutdown.o *.stackdump
