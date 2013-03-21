@@ -1,7 +1,7 @@
 /*
  * shutdown.c: implementation of shutdown(1) as part of a Cygwin environment
  *
- * Copyright 1998, 2001, 2003, 2005, 2012  Corinna Vinschen,
+ * Copyright 1998, 2001, 2003, 2005, 2012, 2013  Corinna Vinschen,
  * bug reports to  cygwin@cygwin.com
  *
  * This program is free software; you can redistribute it and/or modify
