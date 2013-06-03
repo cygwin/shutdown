@@ -2,7 +2,8 @@
  * shutdown.c: implementation of shutdown(1) as part of a Cygwin environment
  *
  * Copyright 1998, 2001, 2003, 2005, 2012, 2013  Corinna Vinschen,
- * bug reports to  cygwin@cygwin.com
+ *           2013 Frank Fesevur
+ * Bug reports to  cygwin@cygwin.com
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-*/
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -36,7 +37,7 @@
 #define SUSPEND		 64
 #define ABORT		128
 
-static char *SCCSid = "@(#)shutdown V1.9, Corinna Vinschen, " __DATE__ "\n";
+static char *SCCSid = "@(#)shutdown V1.10, Corinna Vinschen, " __DATE__ "\n";
 
 char *myname;
 long secs = -1;
@@ -63,12 +64,14 @@ usage_shutdown (void)
   printf ("Usage: %s [OPTION]... time\n", myname);
   printf ("Bring the system down.\n\n");
   printf ("  -f, --force      Forces the execution.\n");
+  printf ("  -h, --halt       The system will shutdown and power off (if supported)\n");
   printf ("  -s, --shutdown   The system will shutdown and power off (if supported)\n");
   printf ("  -r, --reboot     The system will reboot.\n");
-  printf ("  -h, --hibernate  The system will suspend to disk (if supported)\n");
+  printf ("  -b, --hibernate  The system will suspend to disk (if supported)\n");
   printf ("  -p, --suspend    The system will suspend to RAM (if supported)\n");
+  printf ("  -c, --cancel     Aborts execution of formerly started shutdown.\n");
   printf ("  -a, --abort      Aborts execution of formerly started shutdown.\n");
-  printf ("  -x, --exitex     Use ExitWindowsEx rather than InitateSystemShutdown.\n");
+  printf ("  -x, --exitex     Use ExitWindowsEx rather than InitiateSystemShutdownEx.\n");
   printf ("      --help       Display this help and exit.\n");
   printf ("      --version    Output version information and exit.\n");
   printf ("\n`time' is either the time in seconds or `+' and the time in minutes or a\n");
@@ -98,7 +101,7 @@ usage_reboot (void)
   }
 
   printf ("  -f, --force      Forces the execution.\n");
-  printf ("  -x, --exitex     Use ExitWindowsEx rather than InitateSystemShutdown.\n");
+  printf ("  -x, --exitex     Use ExitWindowsEx rather than InitiateSystemShutdownEx.\n");
   printf ("      --help       Display this help and exit.\n");
   printf ("      --version    Output version information and exit.\n");
   return 0;
@@ -108,7 +111,7 @@ int
 version (void)
 {
   printf ("%s\n", SCCSid + 4);
-  printf ("Copyright (C) 2005-2013 Corinna Vinschen\n");
+  printf ("Copyright (C) 2005-2013 Corinna Vinschen, Frank Fesevur\n");
   printf ("This is free software; see the source for copying conditions.\n");
   printf ("There is NO warranty; not even for MERCHANTABILITY or FITNESS\n");
   printf ("FOR A PARTICULAR PURPOSE.\n");
@@ -166,18 +169,20 @@ parse_cmdline_shutdown(int argc, char **argv)
 {
   struct option longopts[] = {
     {"abort", no_argument, NULL, 'a'},
+    {"cancel", no_argument, NULL, 'c'},
     {"exitex", no_argument, NULL, 'x'},
     {"force", no_argument, NULL, 'f'},
     {"shutdown", no_argument, NULL, 's'},
+    {"halt", no_argument, NULL, 'h'},
     {"reboot", no_argument, NULL, 'r'},
-    {"hibernate", no_argument, NULL, 'h'},
+    {"hibernate", no_argument, NULL, 'b'},
     {"suspend", no_argument, NULL, 'p'},
     {"help", no_argument, NULL, 'H'},
     {"version", no_argument, NULL, 'v'},
     {0, no_argument, NULL, 0}
   };
 
-  char opts[] = "axfsrhp";
+  char opts[] = "acxfshrbp";
   int c;
   char *arg, *endptr;
 
@@ -188,18 +193,20 @@ parse_cmdline_shutdown(int argc, char **argv)
 	force = EWX_FORCE;
 	break;
       case 's':
+      case 'h':
         action = EWX_POWEROFF;
 	break;
       case 'r':
 	action = EWX_REBOOT;
 	break;
-      case 'h':
+      case 'b':
         action = HIBERNATE;
 	break;
       case 'p':
         action = SUSPEND;
 	break;
       case 'a':
+      case 'c':
 	action = ABORT;
 	break;
       case 'x':

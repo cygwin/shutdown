@@ -1,6 +1,6 @@
 .\"             -*-Nroff-*-
 .\"
-.TH SHUTDOWN "8" "March 2013" "" ""
+.TH SHUTDOWN "8" "June 2013" "" ""
 .SH NAME
 shutdown \- bring the system down.
 .SH SYNOPSIS
@@ -26,23 +26,29 @@ which specifies the time on the 24hr clock. A single number will be treated as t
 \fB\-f\fR, \fB\-\-force\fR
 Forces the execution. This can cause applications to lose data.
 .TP
-\fB\-s\fR, \fB\-\-shutdown\fR
+\fB\-h\fR, \fB\-\-halt\fR
 The system will shutdown and power off. This is the default action. The system must support the power-off feature, but most systems do.
+.TP
+\fB\-s\fR, \fB\-\-shutdown\fR
+Same as --halt. Here for compatibility with the Windows shutdown command line tool.
 .TP
 \fB\-r\fR, \fB\-\-reboot\fR
 The system will shutdown and then restart.
 .TP
-\fB\-h\fR, \fB\-\-hibernate\fR
+\fB\-b\fR, \fB\-\-hibernate\fR
 The system will suspend to disk. The system must support the hibernate feature.
 .TP
 \fB\-p\fR, \fB\-\-suspend\fR
 The system will suspend to RAM. This is also known as sleep or standby. The system must support the suspend feature.
 .TP
-\fB\-a\fR, \fB\-\-abort\fR
+\fB\-c\fR, \fB\-\-cancel\fR
 Aborts the execution of formerly started shutdown or reboot.
 .TP
+\fB\-a\fR, \fB\-\-abort\fR
+Same as --cancel. Here for compatibility with the Windows shutdown command line tool.
+.TP
 \fB\-x\fR, \fB\-\-exitex\fR
-Use ExitWindowsEx rather than InitateSystemShutdown.
+Use ExitWindowsEx rather than InitiateSystemShutdownEx.
 .TP
 \fB\-\-help\fR
 Display a help text and exit.
@@ -51,9 +57,9 @@ Display a help text and exit.
 Display version information and exit.
 .SH AUTHORS
 .B shutdown
-was written by Corinna Vinschen.
+was written by Corinna Vinschen and Frank Fesevur.
 .SH COPYRIGHT
-Copyright 2005-2013 Corinna Vinschen. License GPLv3+: GNU GPL version 3 or later
+Copyright 2005-2013 Corinna Vinschen, Frank Fesevur. License GPLv3+: GNU GPL version 3 or later
 .UR
 <http://gnu.org/licenses/gpl.html>.
 .PP

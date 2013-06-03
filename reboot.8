@@ -1,6 +1,6 @@
 .\"             -*-Nroff-*-
 .\"
-.TH REBOOT "8" "March 2013" "" ""
+.TH REBOOT "8" "June 2013" "" ""
 .SH NAME
 reboot, halt, poweroff, hibernate, suspend \- reboot, stop or suspend the system.
 .SH SYNOPSIS
@@ -19,18 +19,18 @@ reboot, halt, poweroff, hibernate, suspend \- reboot, stop or suspend the system
 .B suspend
 [\fIoptions\fR]
 .SH DESCRIPTION
-These programs allow to
+These programs allow the user to
 .BR reboot ", " halt ", " poweroff ", " hibernate " or " suspend
 the system.
 .PP
-They are aliases for \fBshutdown --reboot now\fR, \fBshutdown now\fR, \fBshutdown --hibernate now\fR and \fBshutdown --suspend now\fR.
+They are aliases for \fBshutdown --reboot now\fR, \fBshutdown --halt now\fR, \fBshutdown --hibernate now\fR and \fBshutdown --suspend now\fR.
 .SH OPTIONS
 .TP
 \fB\-f\fR, \fB\-\-force\fR
 Forces the execution. This can cause applications to lose data.
 .TP
 \fB\-x\fR, \fB\-\-exitex\fR
-Use ExitWindowsEx rather than InitateSystemShutdown.
+Use ExitWindowsEx rather than InitiateSystemShutdownEx.
 .TP
 \fB\-\-help\fR
 Display a help text and exit.
@@ -39,9 +39,9 @@ Display a help text and exit.
 Display version information and exit.
 .SH AUTHORS
 .B reboot
-was written by Corinna Vinschen.
+was written by Corinna Vinschen and Frank Fesevur.
 .SH COPYRIGHT
-Copyright 2005-2013 Corinna Vinschen. License GPLv3+: GNU GPL version 3 or later
+Copyright 2005-2013 Corinna Vinschen, Frank Fesevur. License GPLv3+: GNU GPL version 3 or later
 .UR
 <http://gnu.org/licenses/gpl.html>.
 .PP
