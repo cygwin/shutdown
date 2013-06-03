@@ -21,6 +21,7 @@
 SRCDIR ?= .
 VPATH = $(SRCDIR)
 
+CC = gcc
 BINDIR=/usr/bin
 MANDIR=/usr/share/man/man8
 DESTDIR=
