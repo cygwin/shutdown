@@ -29,6 +29,7 @@
 #include <time.h>
 
 #define WINVER 0x0600
+#define _WIN32_WINNT 0x0600
 #include <windows.h>
 #include <reason.h>
 
@@ -39,13 +40,21 @@
 
 static char *SCCSid = "@(#)shutdown V1.10, Corinna Vinschen, " __DATE__ "\n";
 
+#define MAXBUF 4096
+
 char *myname;
 long secs = -1;
 int action = EWX_POWEROFF;
 int force = 0;
 BOOL force_exitex = FALSE;
-char buf[4096];
-char errbuf[4096];
+BOOL install_updates = FALSE;
+BOOL at_least_vista = FALSE;
+char buf[MAXBUF];
+char errbuf[MAXBUF];
+
+// For dynamically loading InitiateShutdown()
+HMODULE hLibrary = NULL;
+typedef DWORD (WINAPI *LPINITIATESHUTDOWN)(LPTSTR lpMachineName, LPTSTR lpMessage, DWORD dwGracePeriod, DWORD dwShutdownFlags, DWORD dwReason);
 
 char *
 error (DWORD err)
@@ -69,6 +78,7 @@ usage_shutdown (void)
   printf ("  -r, --reboot     The system will reboot.\n");
   printf ("  -b, --hibernate  The system will suspend to disk (if supported)\n");
   printf ("  -p, --suspend    The system will suspend to RAM (if supported)\n");
+  printf ("  -i, --install    Install Windows Updates during shutdown or reboot.\n");
   printf ("  -c, --cancel     Aborts execution of formerly started shutdown.\n");
   printf ("  -a, --abort      Aborts execution of formerly started shutdown.\n");
   printf ("  -x, --exitex     Use ExitWindowsEx rather than InitiateSystemShutdownEx.\n");
@@ -101,6 +111,7 @@ usage_reboot (void)
   }
 
   printf ("  -f, --force      Forces the execution.\n");
+  printf ("  -i, --install    Install Windows Updates during shutdown or reboot.\n");
   printf ("  -x, --exitex     Use ExitWindowsEx rather than InitiateSystemShutdownEx.\n");
   printf ("      --help       Display this help and exit.\n");
   printf ("      --version    Output version information and exit.\n");
@@ -163,135 +174,138 @@ setprivs (void)
 }
 
 /* parse command line for the shutdown command */
-
-int
-parse_cmdline_shutdown(int argc, char **argv)
+int parse_cmdline_shutdown(int argc, char **argv)
 {
-  struct option longopts[] = {
-    {"abort", no_argument, NULL, 'a'},
-    {"cancel", no_argument, NULL, 'c'},
-    {"exitex", no_argument, NULL, 'x'},
-    {"force", no_argument, NULL, 'f'},
-    {"shutdown", no_argument, NULL, 's'},
-    {"halt", no_argument, NULL, 'h'},
-    {"reboot", no_argument, NULL, 'r'},
-    {"hibernate", no_argument, NULL, 'b'},
-    {"suspend", no_argument, NULL, 'p'},
-    {"help", no_argument, NULL, 'H'},
-    {"version", no_argument, NULL, 'v'},
-    {0, no_argument, NULL, 0}
-  };
+	struct option longopts[] = {
+		{"abort", no_argument, NULL, 'a'},
+		{"cancel", no_argument, NULL, 'c'},
+		{"exitex", no_argument, NULL, 'x'},
+		{"force", no_argument, NULL, 'f'},
+		{"shutdown", no_argument, NULL, 's'},
+		{"halt", no_argument, NULL, 'h'},
+		{"reboot", no_argument, NULL, 'r'},
+		{"hibernate", no_argument, NULL, 'b'},
+		{"suspend", no_argument, NULL, 'p'},
+		{"install", no_argument, NULL, 'i'},
+		{"help", no_argument, NULL, 'H'},
+		{"version", no_argument, NULL, 'v'},
+		{0, no_argument, NULL, 0}
+	};
 
-  char opts[] = "acxfshrbp";
-  int c;
-  char *arg, *endptr;
+	char opts[] = "acxfshrbpi";
+	int c;
+	char *arg, *endptr;
 
-  while ((c = getopt_long (argc, argv, opts, longopts, NULL)) != EOF)
-    switch (c)
-      {
-      case 'f':
-	force = EWX_FORCE;
-	break;
-      case 's':
-      case 'h':
-        action = EWX_POWEROFF;
-	break;
-      case 'r':
-	action = EWX_REBOOT;
-	break;
-      case 'b':
-        action = HIBERNATE;
-	break;
-      case 'p':
-        action = SUSPEND;
-	break;
-      case 'a':
-      case 'c':
-	action = ABORT;
-	break;
-      case 'x':
-	force_exitex = TRUE;
-	break;
-      case 'v':
-	return version ();
-      case 'H':
-	return usage_shutdown ();
-      default:
-        fprintf (stderr, "Try `%s --help' for more information.\n", myname);
-	return 1;
-      }
-
-  if (action != ABORT)
-    {
-      if (optind >= argc)
+	while ((c = getopt_long (argc, argv, opts, longopts, NULL)) != EOF)
 	{
-	  fprintf (stderr, "%s: missing arguments\n", myname);
-	  fprintf (stderr, "Try `%s --help' for more information.\n", myname);
-	  return 1;
-	}
-      arg = argv[optind];
-      if (!strcasecmp (arg, "now"))
-	{
-	  secs = 0;
-	  strcpy (buf, "NOW");
-	}
-      else if (arg[0] == '+' && isdigit ((unsigned) arg[1]))
-	{
-	  /* Leading `+' means time in minutes. */
-	  secs = strtol (arg, &endptr, 10) * 60;
-	  if (*endptr)
-	    secs = -1;
-	  else
-	    sprintf (buf, "in %ld minute", secs / 60);
-	}
-      else if (isdigit ((unsigned) arg[0]) && strchr (arg + 1, ':'))
-	{
-	  /* HH:MM, timestamp when to shutdown. */
-	  long hour, minute;
-	  time_t now, then;
-	  struct tm *loc;
-
-	  hour = strtol (arg, &endptr, 10);
-	  if (*endptr == ':' && hour >= 0 && hour <= 23)
-	    {
-	      minute = strtol (endptr + 1, &endptr, 10);
-	      if (!*endptr && minute >= 0 && minute <= 59)
+		switch (c)
 		{
-		  then = now = time (NULL);
-		  loc = localtime (&now);
-		  if (loc->tm_hour > hour
-		      || (loc->tm_hour == hour && loc->tm_min >= minute))
-		    {
-		      then += 24 * 60 * 60; /* Next day */
-		      loc = localtime (&then);
-		    }
-		  loc->tm_hour = hour;
-		  loc->tm_min = minute;
-		  loc->tm_sec = 0;
-		  then = mktime (loc);
-		  secs = then - now;
-		  sprintf (buf, "at %02ld:%02ld", hour, minute);
+			case 'f':
+				force = EWX_FORCE;
+				break;
+			case 's':
+			case 'h':
+				action = EWX_POWEROFF;
+				break;
+			case 'r':
+				action = EWX_REBOOT;
+				break;
+			case 'b':
+				action = HIBERNATE;
+				break;
+			case 'p':
+				action = SUSPEND;
+				break;
+			case 'i':
+				install_updates = TRUE;
+				break;
+			case 'a':
+			case 'c':
+				action = ABORT;
+				break;
+			case 'x':
+				force_exitex = TRUE;
+				break;
+			case 'v':
+				return version ();
+			case 'H':
+				return usage_shutdown ();
+			default:
+				fprintf (stderr, "Try `%s --help' for more information.\n", myname);
+				return 1;
 		}
-	    }
 	}
-      else if (isdigit ((unsigned) arg[0]))
+
+	if (action != ABORT)
 	{
-	  /* otherwise time in seconds. */
-	  secs = strtol (arg, &endptr, 10);
-	  if (*endptr)
-	    secs = -1;
-	  else
-	    sprintf (buf, "in %ld seconds", secs);
-	}
-      if (secs < 0)
-	{
-	  fprintf (stderr, "%s: Invalid time format.\n", myname);
-	  fprintf (stderr, "Try `%s --help' for more information.\n", myname);
-	  return 2;
-	}
+		if (optind >= argc)
+		{
+			fprintf (stderr, "%s: missing arguments\n", myname);
+			fprintf (stderr, "Try `%s --help' for more information.\n", myname);
+			return 1;
+		}
+		arg = argv[optind];
+		if (!strcasecmp (arg, "now"))
+		{
+			secs = 0;
+			strcpy (buf, "NOW");
+		}
+		else if (arg[0] == '+' && isdigit ((unsigned) arg[1]))
+		{
+			/* Leading `+' means time in minutes. */
+			secs = strtol (arg, &endptr, 10) * 60;
+			if (*endptr)
+				secs = -1;
+			else
+				sprintf (buf, "in %ld minute", secs / 60);
+		}
+		else if (isdigit ((unsigned) arg[0]) && strchr (arg + 1, ':'))
+		{
+			/* HH:MM, timestamp when to shutdown. */
+			long hour, minute;
+			time_t now, then;
+			struct tm *loc;
+
+			hour = strtol (arg, &endptr, 10);
+			if (*endptr == ':' && hour >= 0 && hour <= 23)
+			{
+				minute = strtol (endptr + 1, &endptr, 10);
+				if (!*endptr && minute >= 0 && minute <= 59)
+				{
+					then = now = time (NULL);
+					loc = localtime (&now);
+					if (loc->tm_hour > hour || (loc->tm_hour == hour && loc->tm_min >= minute))
+					{
+						then += 24 * 60 * 60; /* Next day */
+						loc = localtime (&then);
+					}
+					loc->tm_hour = hour;
+					loc->tm_min = minute;
+					loc->tm_sec = 0;
+					then = mktime (loc);
+					secs = then - now;
+					sprintf (buf, "at %02ld:%02ld", hour, minute);
+				}
+			}
+		}
+		else if (isdigit ((unsigned) arg[0]))
+		{
+			/* otherwise time in seconds. */
+			secs = strtol (arg, &endptr, 10);
+			if (*endptr)
+				secs = -1;
+			else
+				sprintf (buf, "in %ld seconds", secs);
+		}
+		if (secs < 0)
+		{
+			fprintf (stderr, "%s: Invalid time format.\n", myname);
+			fprintf (stderr, "Try `%s --help' for more information.\n", myname);
+			return 2;
+		}
     }
 
-  return -1;
+	return -1;
 }
 
 int
@@ -337,11 +351,83 @@ parse_cmdline_reboot(int argc, char **argv)
   return -1;
 }
 
+void check_windows_version(void)
+{
+	// Determine the Windows Version
+	OSVERSIONINFO osvi;
+	ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
+	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+	GetVersionEx(&osvi);
+
+	at_least_vista = (osvi.dwMajorVersion >= 6);
+}
+
+// Do the shutdown. Depending on the Windows version use the best API call
+BOOL do_shutdown(void)
+{
+	char msgbuf[MAXBUF];
+	strcpy(msgbuf, "WARNING!!! System is going down");
+
+	if (!at_least_vista)
+	{
+		return InitiateSystemShutdownEx(NULL, msgbuf, secs,
+										force == EWX_FORCE,
+										action == EWX_REBOOT,
+										SHTDN_REASON_MAJOR_OTHER | SHTDN_REASON_MINOR_OTHER | SHTDN_REASON_FLAG_PLANNED);
+	}
+
+	// InitiateSystemShutdown() is available from Vista/Server 2008 and later
+	DWORD dwFlags = 0;
+	DWORD dwReason = SHTDN_REASON_MAJOR_OTHER | SHTDN_REASON_FLAG_PLANNED;
+
+	// Shutdown
+	if (action == EWX_POWEROFF)
+		dwFlags |= SHUTDOWN_POWEROFF;
+
+	// Reboot
+	if (action == EWX_REBOOT)
+		dwFlags |= SHUTDOWN_RESTART;
+
+	// Force
+	if (force == EWX_FORCE)
+		dwFlags |= SHUTDOWN_FORCE_OTHERS | SHUTDOWN_FORCE_SELF;
+
+	// When installing updates use a different reason
+	if (install_updates)
+	{
+		dwFlags |= SHUTDOWN_INSTALL_UPDATES;
+		dwReason |= SHTDN_REASON_MINOR_UPGRADE;
+	}
+	else
+		dwReason |= SHTDN_REASON_MINOR_OTHER;
+
+	// Dynamically load InitiateShutdown()
+	hLibrary = LoadLibrary("Advapi32.dll");
+	if (hLibrary == NULL)
+		return FALSE;
+
+	LPINITIATESHUTDOWN lpInitiateShutdown = (LPINITIATESHUTDOWN) GetProcAddress(hLibrary, "InitiateShutdownA");
+	if (lpInitiateShutdown == NULL)
+	{
+		FreeLibrary((HMODULE) hLibrary);
+		return FALSE;
+	}
+
+	// Perform the shutdown itself
+	DWORD ret = lpInitiateShutdown(NULL, msgbuf, secs, dwFlags, dwReason);
+
+	// Close the handle to the DLL
+	FreeLibrary(hLibrary);
+	return ret == ERROR_SUCCESS;
+}
+
 int
 main (int argc, char **argv)
 {
   DWORD err;
   buf[0] = 0;
+
+  check_windows_version();
 
   if ((myname = strrchr (argv[0], '/')) || (myname = strrchr (argv[0], '\\')))
     ++myname;
@@ -401,14 +487,7 @@ main (int argc, char **argv)
 	  if (ExitWindowsEx (action | force, 0x80000000))
 	    return 0;
 	}
-      else if (InitiateSystemShutdownExW (NULL,
-					  L"WARNING!!! System is going down",
-					  secs,
-					  force == EWX_FORCE,
-					  action == EWX_REBOOT,
-					  SHTDN_REASON_MAJOR_OTHER
-					  | SHTDN_REASON_MINOR_OTHER
-					  | SHTDN_REASON_FLAG_PLANNED))
+      else if (do_shutdown())
 	return 0;
     }
   else if (action == ABORT)
