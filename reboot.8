@@ -29,8 +29,11 @@ They are aliases for \fBshutdown --reboot now\fR, \fBshutdown --halt now\fR, \fB
 \fB\-f\fR, \fB\-\-force\fR
 Forces the execution. This can cause applications to lose data.
 .TP
+\fB\-i\fR, \fB\-\-install\fR
+Install Windows Updates during shutdown or reboot. This is only supported on Windows Vista, Windows Server 2008 and later. Doesn't work with \fB--exitex\fR.
+.TP
 \fB\-x\fR, \fB\-\-exitex\fR
-Use ExitWindowsEx rather than InitiateSystemShutdownEx.
+Use ExitWindowsEx rather than InitiateSystemShutdownEx or InitiateShutdown.
 .TP
 \fB\-\-help\fR
 Display a help text and exit.

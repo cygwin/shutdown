@@ -41,6 +41,9 @@ The system will suspend to disk. The system must support the hibernate feature.
 \fB\-p\fR, \fB\-\-suspend\fR
 The system will suspend to RAM. This is also known as sleep or standby. The system must support the suspend feature.
 .TP
+\fB\-i\fR, \fB\-\-install\fR
+Install Windows Updates during shutdown or reboot. This is only supported on Windows Vista, Windows Server 2008 and later. Doesn't work with \fB--exitex\fR.
+.TP
 \fB\-c\fR, \fB\-\-cancel\fR
 Aborts the execution of formerly started shutdown or reboot.
 .TP
@@ -48,7 +51,7 @@ Aborts the execution of formerly started shutdown or reboot.
 Same as --cancel. Here for compatibility with the Windows shutdown command line tool.
 .TP
 \fB\-x\fR, \fB\-\-exitex\fR
-Use ExitWindowsEx rather than InitiateSystemShutdownEx.
+Use ExitWindowsEx rather than InitiateSystemShutdownEx or InitiateShutdown.
 .TP
 \fB\-\-help\fR
 Display a help text and exit.
