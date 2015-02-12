@@ -308,47 +308,53 @@ int parse_cmdline_shutdown(int argc, char **argv)
 	return -1;
 }
 
-int
-parse_cmdline_reboot(int argc, char **argv)
+// Parse the command line for the short commands
+int parse_cmdline_reboot(int argc, char **argv)
 {
-  struct option longopts[] = {
-    {"exitex", no_argument, NULL, 'x'},
-    {"force", no_argument, NULL, 'f'},
-    {"help", no_argument, NULL, 'H'},
-    {"version", no_argument, NULL, 'v'},
-    {0, no_argument, NULL, 0}
-  };
+	struct option longopts[] = {
+		{"exitex", no_argument, NULL, 'x'},
+		{"force", no_argument, NULL, 'f'},
+		{"install", no_argument, NULL, 'i'},
+		{"help", no_argument, NULL, 'H'},
+		{"version", no_argument, NULL, 'v'},
+		{0, no_argument, NULL, 0}
+	};
 
-  char opts[] = "xf";
-  int c;
+	char opts[] = "xfi";
+	int c;
 
-  while ((c = getopt_long (argc, argv, opts, longopts, NULL)) != EOF)
-    switch (c)
-      {
-      case 'f':
-	force = EWX_FORCE;
-	break;
-      case 'x':
-	force_exitex = TRUE;
-	break;
-      case 'v':
-	return version ();
-      case 'H':
-	return usage_reboot ();
-      default:
-        fprintf (stderr, "Try `%s --help' for more information.\n", myname);
-	return 1;
-      }
+	while ((c = getopt_long (argc, argv, opts, longopts, NULL)) != EOF)
+	{
+		switch (c)
+		{
+			case 'f':
+				force = EWX_FORCE;
+				break;
+			case 'i':
+				install_updates = TRUE;
+				break;
+			case 'x':
+				force_exitex = TRUE;
+				break;
+			case 'v':
+				return version ();
+			case 'H':
+				return usage_reboot ();
+			default:
+				fprintf (stderr, "Try `%s --help' for more information.\n", myname);
+				return 1;
+		}
+	}
 
-  if (optind != argc)
-    {
-    fprintf (stderr, "%s: too many arguments\n", myname);
-    fprintf (stderr, "Try `%s --help' for more information.\n", myname);
-    return 1;
-    }
+	if (optind != argc)
+	{
+		fprintf (stderr, "%s: too many arguments\n", myname);
+		fprintf (stderr, "Try `%s --help' for more information.\n", myname);
+		return 1;
+	}
 
-  strcpy (buf, "NOW");
-  return -1;
+	strcpy (buf, "NOW");
+	return -1;
 }
 
 void check_windows_version(void)
