@@ -26,7 +26,7 @@ BINDIR=/usr/bin
 MANDIR=/usr/share/man/man8
 DESTDIR=
 
-CFLAGS?=-g
+CFLAGS?=-g -std=c99
 
 EXEEXT=.exe
 

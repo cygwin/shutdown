@@ -6,7 +6,7 @@ shutdown \- bring the system down.
 .SH SYNOPSIS
 .B shutdown
 [\fIoptions\fR]
-TIME
+TIME [MESSAGE]
 .SH DESCRIPTION
 .B shutdown
 brings the system down in a safe way.
@@ -20,7 +20,10 @@ where
 .I m
 is the number of minutes to wait until shutting down and
 .I hh:mm
-which specifies the time on the 24hr clock. A single number will be treated as the number of seconds before shutting down.
+which specifies the time on the 24 hour clock. A single number will be treated as the number of seconds before shutting down.
+.PP
+.I MESSAGE
+is an optional warning message that will be shown on the console and is sent to all logged on users. If no message is supplied a default message is created. This message is stored in Windows System Event Log as well.
 .SH OPTIONS
 .TP
 \fB\-f\fR, \fB\-\-force\fR

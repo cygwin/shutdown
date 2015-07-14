@@ -306,6 +306,14 @@ int parse_cmdline_shutdown(int argc, char **argv)
 		}
     }
 
+	// Are there any arguments left? That must the user supplied message
+	for (int i = optind + 1; i < argc; i++)
+	{
+		if (strlen(msgbuf) > 0)
+			strncat(msgbuf, " ", MAXBUF);
+		strncat(msgbuf, argv[i], MAXBUF);
+	}
+
 	return -1;
 }
 
@@ -372,6 +380,10 @@ void check_windows_version(void)
 // construct the shutdown message
 void construct_msg(void)
 {
+	// Did the user already give a message on the command line?
+	if (strlen(msgbuf) != 0)
+		return;
+
 	// Start with this
 	strncpy(msgbuf, "WARNING!!! System will ", MAXBUF);
 
