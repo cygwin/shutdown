@@ -49,7 +49,8 @@ int force = 0;
 BOOL force_exitex = FALSE;
 BOOL install_updates = FALSE;
 BOOL at_least_vista = FALSE;
-char buf[MAXBUF];
+char msgbuf[MAXBUF];
+char timebuf[MAXBUF];
 char errbuf[MAXBUF];
 
 // For dynamically loading InitiateShutdown()
@@ -248,7 +249,7 @@ int parse_cmdline_shutdown(int argc, char **argv)
 		if (!strcasecmp (arg, "now"))
 		{
 			secs = 0;
-			strcpy (buf, "NOW");
+			strcpy (timebuf, "NOW");
 		}
 		else if (arg[0] == '+' && isdigit ((unsigned) arg[1]))
 		{
@@ -257,7 +258,7 @@ int parse_cmdline_shutdown(int argc, char **argv)
 			if (*endptr)
 				secs = -1;
 			else
-				sprintf (buf, "in %ld minute", secs / 60);
+				sprintf (timebuf, "in %ld minute", secs / 60);
 		}
 		else if (isdigit ((unsigned) arg[0]) && strchr (arg + 1, ':'))
 		{
@@ -284,7 +285,7 @@ int parse_cmdline_shutdown(int argc, char **argv)
 					loc->tm_sec = 0;
 					then = mktime (loc);
 					secs = then - now;
-					sprintf (buf, "at %02ld:%02ld", hour, minute);
+					sprintf (timebuf, "at %02ld:%02ld", hour, minute);
 				}
 			}
 		}
@@ -295,7 +296,7 @@ int parse_cmdline_shutdown(int argc, char **argv)
 			if (*endptr)
 				secs = -1;
 			else
-				sprintf (buf, "in %ld seconds", secs);
+				sprintf (timebuf, "in %ld seconds", secs);
 		}
 		if (secs < 0)
 		{
@@ -353,7 +354,7 @@ int parse_cmdline_reboot(int argc, char **argv)
 		return 1;
 	}
 
-	strcpy (buf, "NOW");
+	strcpy (timebuf, "NOW");
 	return -1;
 }
 
@@ -368,12 +369,41 @@ void check_windows_version(void)
 	at_least_vista = (osvi.dwMajorVersion >= 6);
 }
 
+// construct the shutdown message
+void construct_msg(void)
+{
+	// Start with this
+	strncpy(msgbuf, "WARNING!!! System will ", MAXBUF);
+
+	// Will updates de installed during shutdown/reboot?
+	if (install_updates)
+		strncat(msgbuf, "install updates and ", MAXBUF);
+
+	// Add the action
+	switch (action)
+	{
+		case EWX_POWEROFF:
+			strncat(msgbuf, "shutdown", MAXBUF);
+			break;
+		case EWX_REBOOT:
+			strncat(msgbuf, "reboot", MAXBUF);
+			break;
+		case HIBERNATE:
+			strncat(msgbuf, "hibernate", MAXBUF);
+			break;
+		case SUSPEND:
+			strncat(msgbuf, "suspend", MAXBUF);
+			break;
+	}
+
+	// Tell the user when this is going to happen
+	strncat(msgbuf, " ", MAXBUF);
+	strncat(msgbuf, timebuf, MAXBUF);
+}
+
 // Do the shutdown. Depending on the Windows version use the best API call
 BOOL do_shutdown(void)
 {
-	char msgbuf[MAXBUF];
-	strcpy(msgbuf, "WARNING!!! System is going down");
-
 	if (!at_least_vista)
 	{
 		return InitiateSystemShutdownEx(NULL, msgbuf, secs,
@@ -427,109 +457,111 @@ BOOL do_shutdown(void)
 	return ret == ERROR_SUCCESS;
 }
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-  DWORD err;
-  buf[0] = 0;
+	timebuf[0] = 0;
+	msgbuf[0] = 0;
 
-  check_windows_version();
+	check_windows_version();
 
-  if ((myname = strrchr (argv[0], '/')) || (myname = strrchr (argv[0], '\\')))
-    ++myname;
-  else
-    myname = argv[0];
-  if (strrchr (myname, '.'))
-    *strrchr (myname, '.') = '\0';
-  if (!strcasecmp (myname, "reboot"))
-  {
-    action = EWX_REBOOT;
-    secs = 0;
-  }
-  else if (!strcasecmp (myname, "halt") || !strcasecmp (myname, "poweroff"))
-  {
-    action = EWX_POWEROFF;
-    secs = 0;
-  }
-  else if (!strcasecmp (myname, "hibernate"))
-  {
-    action = HIBERNATE;
-    secs = 0;
-  }
-  else if (!strcasecmp (myname, "suspend"))
-  {
-    action = SUSPEND;
-    secs = 0;
-  }
-
-  /* Parse the entire command line */
-  if (secs < 0)
-  {
-    /* secs not set to 0, so command must invoked as "shutdown" */
-    int ret = parse_cmdline_shutdown(argc, argv);
-    if (ret >= 0)
-      return ret;
-  }
-  else
-  {
-    int ret = parse_cmdline_reboot(argc, argv);
-    if (ret >= 0)
-      return ret;
-  }
-
-  if (setprivs ())
-    return 3;
-
-  if (action != ABORT)
-    printf ("WARNING!!! System is going down %s\n", buf);
-
-  /* Execute the action */
-  if (action == EWX_POWEROFF || action == EWX_REBOOT)
-    {
-      if (force_exitex)
-        {
-	  while (secs)
-	    secs = sleep (secs);
-	  if (ExitWindowsEx (action | force, 0x80000000))
-	    return 0;
+	if ((myname = strrchr (argv[0], '/')) || (myname = strrchr (argv[0], '\\')))
+		++myname;
+	else
+		myname = argv[0];
+	if (strrchr (myname, '.'))
+		*strrchr (myname, '.') = '\0';
+	if (!strcasecmp (myname, "reboot"))
+	{
+		action = EWX_REBOOT;
+		secs = 0;
 	}
-      else if (do_shutdown())
-	return 0;
-    }
-  else if (action == ABORT)
-    {
-      if (AbortSystemShutdownW (NULL))
-        return 0;
-    }
-  else
-    {
-      while (secs)
-	secs = sleep (secs);
-      if (SetSystemPowerState (action == SUSPEND, force == EWX_FORCE))
-	return 0;
-    }
-  
-  /* Something went wrong */
-  err = GetLastError ();
-  fprintf (stderr, "%s: Couldn't ", myname);
-  switch (action)
-    {
-    case EWX_POWEROFF:
-      fprintf (stderr, "shutdown");
-      break;
-    case EWX_REBOOT:
-      fprintf (stderr, "reboot");
-      break;
-    case HIBERNATE:
-      fprintf (stderr, "hibernate");
-      break;
-    case SUSPEND:
-      fprintf (stderr, "suspend");
-      break;
-    case ABORT:
-      fprintf (stderr, "abort");
-      break;
-    }
-  fprintf (stderr, ": %s\n", error (err));
-  return 3;
+	else if (!strcasecmp (myname, "halt") || !strcasecmp (myname, "poweroff"))
+	{
+		action = EWX_POWEROFF;
+		secs = 0;
+	}
+	else if (!strcasecmp (myname, "hibernate"))
+	{
+		action = HIBERNATE;
+		secs = 0;
+	}
+	else if (!strcasecmp (myname, "suspend"))
+	{
+		action = SUSPEND;
+		secs = 0;
+	}
+
+	/* Parse the entire command line */
+	if (secs < 0)
+	{
+		/* secs not set to 0, so command must invoked as "shutdown" */
+		int ret = parse_cmdline_shutdown(argc, argv);
+		if (ret >= 0)
+			return ret;
+	}
+	else
+	{
+		int ret = parse_cmdline_reboot(argc, argv);
+		if (ret >= 0)
+			return ret;
+	}
+
+	if (setprivs ())
+		return 3;
+
+	construct_msg();
+	if (action != ABORT)
+		printf ("%s\n", msgbuf);
+
+	/* Execute the action */
+	if (action == EWX_POWEROFF || action == EWX_REBOOT)
+	{
+		if (force_exitex)
+		{
+			while (secs)
+				secs = sleep (secs);
+			if (ExitWindowsEx (action | force, 0x80000000))
+				return 0;
+		}
+		else if (do_shutdown())
+			return 0;
+	}
+	else if (action == ABORT)
+	{
+		if (AbortSystemShutdown(NULL))
+			return 0;
+	}
+	else
+	{
+		while (secs)
+			secs = sleep (secs);
+		if (SetSystemPowerState (action == SUSPEND, force == EWX_FORCE))
+			return 0;
+	}
+
+	/* Something went wrong */
+	fprintf (stderr, "%s: Couldn't ", myname);
+	switch (action)
+	{
+		case EWX_POWEROFF:
+			fprintf (stderr, "shutdown");
+			break;
+		case EWX_REBOOT:
+			fprintf (stderr, "reboot");
+			break;
+		case HIBERNATE:
+			fprintf (stderr, "hibernate");
+			break;
+		case SUSPEND:
+			fprintf (stderr, "suspend");
+			break;
+		case ABORT:
+			fprintf (stderr, "abort");
+			break;
+	}
+	DWORD err = GetLastError ();
+	fprintf (stderr, ": %s\n", error (err));
+	return 3;
 }
+
+// vim: ts=4:sw=4:noet
