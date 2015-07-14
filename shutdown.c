@@ -57,77 +57,77 @@ char errbuf[MAXBUF];
 HMODULE hLibrary = NULL;
 typedef DWORD (WINAPI *LPINITIATESHUTDOWN)(LPTSTR lpMachineName, LPTSTR lpMessage, DWORD dwGracePeriod, DWORD dwShutdownFlags, DWORD dwReason);
 
-char *
-error (DWORD err)
+char *error(DWORD err)
 {
-  sprintf (errbuf, "Error %lu ", err);
-  FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
-		 NULL, err, MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-		 (LPTSTR) errbuf + strlen (errbuf),
-		 sizeof (errbuf) - strlen (errbuf), NULL);
-  return errbuf;
+	sprintf (errbuf, "Error %lu ", err);
+	FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+					NULL, err, MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+					(LPTSTR) errbuf + strlen (errbuf),
+					sizeof (errbuf) - strlen (errbuf), NULL);
+	return errbuf;
 }
 
-int
-usage_shutdown (void)
+// Show the options valid for both the "shutdown" and the short alias variants
+void usage_general(void)
 {
-  printf ("Usage: %s [OPTION]... time\n", myname);
-  printf ("Bring the system down.\n\n");
-  printf ("  -f, --force      Forces the execution.\n");
-  printf ("  -h, --halt       The system will shutdown and power off (if supported)\n");
-  printf ("  -s, --shutdown   The system will shutdown and power off (if supported)\n");
-  printf ("  -r, --reboot     The system will reboot.\n");
-  printf ("  -b, --hibernate  The system will suspend to disk (if supported)\n");
-  printf ("  -p, --suspend    The system will suspend to RAM (if supported)\n");
-  printf ("  -i, --install    Install Windows Updates during shutdown or reboot.\n");
-  printf ("  -c, --cancel     Aborts execution of formerly started shutdown.\n");
-  printf ("  -a, --abort      Aborts execution of formerly started shutdown.\n");
-  printf ("  -x, --exitex     Use ExitWindowsEx rather than InitiateSystemShutdownEx.\n");
-  printf ("      --help       Display this help and exit.\n");
-  printf ("      --version    Output version information and exit.\n");
-  printf ("\n`time' is either the time in seconds or `+' and the time in minutes or a\n");
-  printf ("timestamp in the format `hh:mm' or the word \"now\" for an immediate action.\n");
-  return 0;
+	printf ("  -f, --force      Forces the execution.\n");
+	printf ("  -i, --install    Install Windows Updates during shutdown or reboot.\n");
+	printf ("  -c, --cancel     Aborts execution of formerly started shutdown.\n");
+	printf ("  -a, --abort      Aborts execution of formerly started shutdown.\n");
+	printf ("  -x, --exitex     Use ExitWindowsEx rather than InitiateSystemShutdownEx.\n");
+	printf ("      --help       Display this help and exit.\n");
+	printf ("      --version    Output version information and exit.\n");
 }
 
-int
-usage_reboot (void)
+// Show the usage for the "shutdown" command
+int usage_shutdown(void)
 {
-  printf ("Usage: %s [OPTION]...\n", myname);
-
-  switch (action)
-  {
-    case EWX_POWEROFF:
-      printf ("Bring the system down.\n\n");
-      break;
-    case EWX_REBOOT:
-      printf ("Reboot the system.\n\n");
-      break;
-    case HIBERNATE:
-      printf ("Suspend the system to disk.\n\n");
-      break;
-    case SUSPEND:
-      printf ("Suspend the system to RAM.\n\n");
-      break;
-  }
-
-  printf ("  -f, --force      Forces the execution.\n");
-  printf ("  -i, --install    Install Windows Updates during shutdown or reboot.\n");
-  printf ("  -x, --exitex     Use ExitWindowsEx rather than InitiateSystemShutdownEx.\n");
-  printf ("      --help       Display this help and exit.\n");
-  printf ("      --version    Output version information and exit.\n");
-  return 0;
+	printf ("Usage: %s [option]... time [message]\n", myname);
+	printf ("Bring the system down.\n\n");
+	printf ("  -h, --halt       The system will shutdown and power off (if supported)\n");
+	printf ("  -s, --shutdown   The system will shutdown and power off (if supported)\n");
+	printf ("  -r, --reboot     The system will reboot.\n");
+	printf ("  -b, --hibernate  The system will suspend to disk (if supported)\n");
+	printf ("  -p, --suspend    The system will suspend to RAM (if supported)\n");
+	usage_general();
+	printf ("\n`time' is either the time in seconds or `+' and the time in minutes or a\n");
+	printf ("timestamp in the format `hh:mm' or the word \"now\" for an immediate action.\n");
+	return 0;
 }
 
-int
-version (void)
+// Show the usage for the short alias commands
+int usage_reboot(void)
 {
-  printf ("%s\n", SCCSid + 4);
-  printf ("Copyright (C) 2005-2013 Corinna Vinschen, Frank Fesevur\n");
-  printf ("This is free software; see the source for copying conditions.\n");
-  printf ("There is NO warranty; not even for MERCHANTABILITY or FITNESS\n");
-  printf ("FOR A PARTICULAR PURPOSE.\n");
-  return 0;
+	printf ("Usage: %s [option]...\n", myname);
+
+	switch (action)
+	{
+		case EWX_POWEROFF:
+			printf ("Bring the system down.\n\n");
+			break;
+		case EWX_REBOOT:
+			printf ("Reboot the system.\n\n");
+			break;
+		case HIBERNATE:
+			printf ("Suspend the system to disk.\n\n");
+			break;
+		case SUSPEND:
+			printf ("Suspend the system to RAM.\n\n");
+		break;
+	}
+
+	usage_general();
+	return 0;
+}
+
+int version(void)
+{
+	printf ("%s\n", SCCSid + 4);
+	printf ("Copyright (C) 2005-2013 Corinna Vinschen, Frank Fesevur\n");
+	printf ("This is free software; see the source for copying conditions.\n");
+	printf ("There is NO warranty; not even for MERCHANTABILITY or FITNESS\n");
+	printf ("FOR A PARTICULAR PURPOSE.\n");
+	return 0;
 }
 
 int
