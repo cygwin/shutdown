@@ -243,6 +243,38 @@ int parse_cmdline_shutdown(int argc, char **argv)
 		}
 	}
 
+	// Some basic checking for invalid use
+	if (install_updates && !at_least_vista)
+	{
+		fprintf(stderr, "Install Windows Updates not supported.\n");
+		fprintf(stderr, "At least Windows Vista or Server 2008 required!\n");
+		return 1;
+	}
+
+	if (install_updates && force_exitex)
+	{
+		fprintf(stderr, "-i and -x can not be used together.\n");
+		return 1;
+	}
+
+	if (install_updates && action != EWX_POWEROFF && action != EWX_REBOOT)
+	{
+		fprintf(stderr, "-i can only be used with -r or -h.\n");
+		return 1;
+	}
+
+	if (hybrid_shutdown && action != EWX_POWEROFF)
+	{
+		fprintf(stderr, "Hybrid mode can only be used with shutdown.\n");
+		return 1;
+	}
+
+	if (install_updates && hybrid_shutdown)
+	{
+		fprintf(stderr, "-i and -H can not be used together.\n");
+		return 1;
+	}
+
 	if (action != ABORT)
 	{
 		if (optind >= argc)
@@ -369,6 +401,25 @@ int parse_cmdline_reboot(int argc, char **argv)
 	{
 		fprintf (stderr, "%s: too many arguments\n", myname);
 		fprintf (stderr, "Try `%s --help' for more information.\n", myname);
+		return 1;
+	}
+
+	// Some basic checking for invalid use
+	if (install_updates && action != EWX_POWEROFF && action != EWX_REBOOT)
+	{
+		fprintf(stderr, "-i can not be used with %s.\n", myname);
+		return 1;
+	}
+
+	if (hybrid_shutdown && action != EWX_POWEROFF)
+	{
+		fprintf(stderr, "Hybrid mode can not be used with %s.\n", myname);
+		return 1;
+	}
+
+	if (install_updates && hybrid_shutdown)
+	{
+		fprintf(stderr, "-i and -H can not be used together.\n");
 		return 1;
 	}
 
