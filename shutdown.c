@@ -49,6 +49,7 @@ int force = 0;
 BOOL force_exitex = FALSE;
 BOOL install_updates = FALSE;
 BOOL at_least_vista = FALSE;
+BOOL hybrid_shutdown = FALSE;
 char msgbuf[MAXBUF];
 char timebuf[MAXBUF];
 char errbuf[MAXBUF];
@@ -72,6 +73,7 @@ void usage_general(void)
 {
 	printf ("  -f, --force      Forces the execution.\n");
 	printf ("  -i, --install    Install Windows Updates during shutdown or reboot.\n");
+	printf ("  -H, --hybrid     Shutdown in hybrid mode and prepare it for fast startup.\n");
 	printf ("  -c, --cancel     Aborts execution of formerly started shutdown.\n");
 	printf ("  -a, --abort      Aborts execution of formerly started shutdown.\n");
 	printf ("  -x, --exitex     Use ExitWindowsEx rather than InitiateSystemShutdownEx.\n");
@@ -188,7 +190,8 @@ int parse_cmdline_shutdown(int argc, char **argv)
 		{"hibernate", no_argument, NULL, 'b'},
 		{"suspend", no_argument, NULL, 'p'},
 		{"install", no_argument, NULL, 'i'},
-		{"help", no_argument, NULL, 'H'},
+		{"hybrid", no_argument, NULL, 'H'},
+		{"help", no_argument, NULL, 'E'},
 		{"version", no_argument, NULL, 'v'},
 		{0, no_argument, NULL, 0}
 	};
@@ -230,6 +233,9 @@ int parse_cmdline_shutdown(int argc, char **argv)
 			case 'v':
 				return version ();
 			case 'H':
+				hybrid_shutdown = TRUE;
+				break;
+			case 'E':
 				return usage_shutdown ();
 			default:
 				fprintf (stderr, "Try `%s --help' for more information.\n", myname);
@@ -324,7 +330,8 @@ int parse_cmdline_reboot(int argc, char **argv)
 		{"exitex", no_argument, NULL, 'x'},
 		{"force", no_argument, NULL, 'f'},
 		{"install", no_argument, NULL, 'i'},
-		{"help", no_argument, NULL, 'H'},
+		{"hybrid", no_argument, NULL, 'H'},
+		{"help", no_argument, NULL, 'E'},
 		{"version", no_argument, NULL, 'v'},
 		{0, no_argument, NULL, 0}
 	};
@@ -345,9 +352,12 @@ int parse_cmdline_reboot(int argc, char **argv)
 			case 'x':
 				force_exitex = TRUE;
 				break;
+			case 'H':
+				hybrid_shutdown = TRUE;
+				break;
 			case 'v':
 				return version ();
-			case 'H':
+			case 'E':
 				return usage_reboot ();
 			default:
 				fprintf (stderr, "Try `%s --help' for more information.\n", myname);
@@ -395,6 +405,8 @@ void construct_msg(void)
 	switch (action)
 	{
 		case EWX_POWEROFF:
+			if (hybrid_shutdown)
+				strncat(msgbuf, "hybrid ", MAXBUF);
 			strncat(msgbuf, "shutdown", MAXBUF);
 			break;
 		case EWX_REBOOT:
@@ -448,6 +460,10 @@ BOOL do_shutdown(void)
 	}
 	else
 		dwReason |= SHTDN_REASON_MINOR_OTHER;
+
+	// Shutdown in hybrid mode
+	if (hybrid_shutdown)
+		dwFlags |= SHUTDOWN_HYBRID;
 
 	// Dynamically load InitiateShutdown()
 	hLibrary = LoadLibrary("Advapi32.dll");

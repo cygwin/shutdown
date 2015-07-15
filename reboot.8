@@ -32,6 +32,9 @@ Forces the execution. This can cause applications to lose data.
 \fB\-i\fR, \fB\-\-install\fR
 Install Windows Updates during shutdown or reboot. This is only supported on Windows Vista, Windows Server 2008 and later. Doesn't work with \fB--exitex\fR.
 .TP
+\fB\-H\fR, \fB\-\-hybrid\fR
+Shutdown in hybrid mode and prepare it for fast startup. This is only supported on Windows 8, Windows Server 2012 R2 and later. Doesn't work with \fB--exitex\fR or with \fB--install\fR.
+.TP
 \fB\-x\fR, \fB\-\-exitex\fR
 Use ExitWindowsEx rather than InitiateSystemShutdownEx or InitiateShutdown.
 .TP
