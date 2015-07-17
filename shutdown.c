@@ -132,48 +132,42 @@ int version(void)
 	return 0;
 }
 
-int
-setprivs (void)
+int setprivs (void)
 {
-  HANDLE token;
-  TOKEN_PRIVILEGES privs;
+	HANDLE token;
+	TOKEN_PRIVILEGES privs;
 
-  /* If the privilege hasn't been found, we're trying to shutdown anyway. */
-  if (!LookupPrivilegeValue (NULL, SE_SHUTDOWN_NAME, &privs.Privileges[0].Luid))
-    {
-      fprintf (stderr, "%s: Warning: can't evaluate privilege: %s\n",
-	       myname, error (GetLastError ()));
-      return 0;
-    }
+	/* If the privilege hasn't been found, we're trying to shutdown anyway. */
+	if (!LookupPrivilegeValue (NULL, SE_SHUTDOWN_NAME, &privs.Privileges[0].Luid))
+	{
+		fprintf (stderr, "%s: Warning: can't evaluate privilege: %s\n", myname, error (GetLastError ()));
+		return 0;
+	}
 
-  privs.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-  privs.PrivilegeCount = 1;
+	privs.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+	privs.PrivilegeCount = 1;
 
-  if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES, &token))
-    {
-      fprintf (stderr, "%s: can't open process token: %s\n",
-	       myname, error (GetLastError ()));
-      return 1;
-    }
-  if (!AdjustTokenPrivileges (token, FALSE, &privs, 0, NULL, NULL))
-    {
-      fprintf (stderr, "%s: can't set required privilege: %s\n",
-	       myname, error (GetLastError ()));
-      return 1;
-    }
-  if (GetLastError () == ERROR_NOT_ALL_ASSIGNED)
-    {
-      fprintf (stderr, "%s: required privilege not held: %s\n",
-	       myname, error (GetLastError ()));
-      return 1;
-    }
-  if (!RevertToSelf ())
-    {
-      fprintf (stderr, "%s: can't activate required privilege: %s\n",
-	       myname, error (GetLastError ()));
-      return 1;
-    }
-  return 0;
+	if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES, &token))
+	{
+		fprintf (stderr, "%s: can't open process token: %s\n", myname, error (GetLastError ()));
+		return 1;
+	}
+	if (!AdjustTokenPrivileges (token, FALSE, &privs, 0, NULL, NULL))
+	{
+		fprintf (stderr, "%s: can't set required privilege: %s\n", myname, error (GetLastError ()));
+		return 1;
+	}
+	if (GetLastError () == ERROR_NOT_ALL_ASSIGNED)
+	{
+		fprintf (stderr, "%s: required privilege not held: %s\n", myname, error (GetLastError ()));
+		return 1;
+	}
+	if (!RevertToSelf ())
+	{
+		fprintf (stderr, "%s: can't activate required privilege: %s\n", myname, error (GetLastError ()));
+		return 1;
+	}
+	return 0;
 }
 
 /* parse command line for the shutdown command */
