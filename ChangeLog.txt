@@ -1,4 +1,0 @@
-- Added --install to install Windows Updates during shutdown/reboot. The InitiateShutdown() Windows API call is used for this. This function is only available from Windows 6.0 (aka Vista or Server 2008) or higher. To assure backwards compatibility with WinXP and Server 2003, InitiateShutdown() is loaded dynamically at runtime.
-- Changed the default shutdown messages
-- User can supply his own shutdown message on the command line
-- Added --hybrid to shutdown in hybrid mode. Hybrid is the default shutdown method with shutting down with the UI of Windows 8.x
