@@ -5,9 +5,11 @@ These are the official sources of the [Cygwin](https://cygwin.com) `shutdown` co
 
 Since Cygwin is not a complete Linux kernel, some low-end stuff like shutting down the machine won't work the Linux way. Therefore Cygwin has its own shutdown program. It is a simple program that mimic the Linux [shutdown](http://linux.die.net/man/8/shutdown) command but uses the [Win32-API](https://msdn.microsoft.com/en-us/library/windows/desktop/aa376883%28v=vs.85%29.aspx) to work on Windows.
 
-Report [issues](https://github.com/ffes/cygwin-shutdown/issues) here or on the [Cygwin mailing list](https://www.cygwin.com/ml/cygwin/).
+Report [issues](https://github.com/cygwin/shutdown/issues) here or on the [Cygwin mailing list](https://www.cygwin.com/ml/cygwin/).
 
-[Pull requests](https://github.com/ffes/cygwin-shutdown/pulls) will always be reviewed or https://cygwin.com/acronyms/#PTC
+[Pull requests](https://github.com/cygwin/shutdown/pulls) will always be reviewed or https://cygwin.com/acronyms/#PTC
+
+The repo can also be found at https://sourceware.org/git/?p=cygwin-apps/shutdown.git
 
 Version history
 ---------------
