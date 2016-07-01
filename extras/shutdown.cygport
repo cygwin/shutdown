@@ -1,0 +1,23 @@
+NAME="shutdown"
+VERSION="1.10"
+RELEASE=1
+CATEGORY="Admin"
+SUMMARY="Shutdown, reboot, hibernate or suspend the machine"
+DESCRIPTION="Shutdown, reboot, hibernate or suspend the machine"
+HOMEPAGE="http://cygwin.com/"
+
+GIT_URI="https://github.com/cygwin/shutdown"
+GIT_TAG="v1.10.0"
+inherit git
+
+src_compile() {
+	cd ${B}
+	make -f ${S}/Makefile SRCDIR=${S}
+}
+
+src_install() {
+	cd ${B}
+	make install -f ${S}/Makefile SRCDIR=${S} DESTDIR=${D}
+}
+
+# vim: ts=4:sw=4:noet:ft=sh
