@@ -2,7 +2,7 @@
  * shutdown.c: implementation of shutdown(1) as part of a Cygwin environment
  *
  * Copyright 1998, 2001, 2003, 2005, 2012, 2013  Corinna Vinschen,
- *           2013 Frank Fesevur
+ *           2013, 2016  Frank Fesevur
  * Bug reports to  cygwin@cygwin.com
  *
  * This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@
 #define SUSPEND		 64
 #define ABORT		128
 
-static char *SCCSid = "@(#)shutdown V1.10, Corinna Vinschen, " __DATE__ "\n";
+static char *SCCSid = "@(#)shutdown V2.0, Corinna Vinschen, Frank Fesevur, " __DATE__ "\n";
 
 #define MAXBUF 4096
 
@@ -125,7 +125,7 @@ int usage_reboot(void)
 int version(void)
 {
 	printf ("%s\n", SCCSid + 4);
-	printf ("Copyright (C) 2005-2013 Corinna Vinschen, Frank Fesevur\n");
+	printf ("Copyright (C) 2005-2016 Corinna Vinschen, Frank Fesevur\n");
 	printf ("This is free software; see the source for copying conditions.\n");
 	printf ("There is NO warranty; not even for MERCHANTABILITY or FITNESS\n");
 	printf ("FOR A PARTICULAR PURPOSE.\n");

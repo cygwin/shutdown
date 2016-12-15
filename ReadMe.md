@@ -14,12 +14,12 @@ The repo can also be found at https://sourceware.org/git/?p=cygwin-apps/shutdown
 Version history
 ---------------
 
-Version 2.0 (Yet To Be Released)
+Version 2.0 (2016-12-15)
 
-* Added `--install` to install Windows Updates during shutdown/reboot. The `InitiateShutdown()` Windows API call is used for this. This function is only available from Windows 6.0 (aka Vista or Server 2008) or higher. To assure backwards compatibility with WinXP and Server 2003, `InitiateShutdown()` is loaded dynamically at runtime.
+* Added `--install` to install Windows Updates during shutdown/reboot. The `InitiateShutdown()` Windows API call is used for this. This function is only available from Windows 6.0 (aka Vista or Server 2008) or higher. To assure backwards compatibility with WinXP and Server 2003, `InitiateShutdown()` is loaded dynamically at runtime. Since Cygwin 2.6 support for WinXP and Server 2003 has been dropped, so this backward compatibility is likely to be removed in a future release.
+* Added `--hybrid` to shutdown in hybrid mode. Hybrid is the default shutdown method with shutting down with the UI of Windows 8.x and higher.
 * Changed the default shutdown messages.
 * User can supply his own shutdown message on the command line.
-* Added `--hybrid` to shutdown in hybrid mode. Hybrid is the default shutdown method with shutting down with the UI of Windows 8.x and higher.
 
 
 Version 1.10 (2013-06-03)

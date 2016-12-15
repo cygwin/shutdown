@@ -1,5 +1,5 @@
 NAME="shutdown"
-VERSION="1.10"
+VERSION="2.0"
 RELEASE=1
 CATEGORY="Admin"
 SUMMARY="Shutdown, reboot, hibernate or suspend the machine"
@@ -7,7 +7,7 @@ DESCRIPTION="Shutdown, reboot, hibernate or suspend the machine"
 HOMEPAGE="http://cygwin.com/"
 
 GIT_URI="https://github.com/cygwin/shutdown"
-GIT_TAG="v1.10.0"
+GIT_TAG="v2.0.0"
 inherit git
 
 src_compile() {
